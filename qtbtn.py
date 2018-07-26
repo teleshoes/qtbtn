@@ -25,7 +25,7 @@ import tempfile
 import time
 
 DEFAULT_ICON_DIR = "/usr/share/icons"
-DEFAULT_ICON_THEME_DIR = "hicolor"
+DEFAULT_ICON_THEME = "hicolor"
 DEFAULT_ICON_MAX_WIDTH = 256
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -379,11 +379,23 @@ class Config():
            , "rowbreak": rowbreak
            }
   def getIconPath(self, icon):
+    if icon == None:
+      return ""
+
+    iconThemeMatch = re.match('\s*(\w+)\s*:\s*(.*)', icon)
+
     if icon != None and os.path.isfile(icon):
       return os.path.abspath(icon)
+    elif iconThemeMatch:
+      themeName = iconThemeMatch.group(1)
+      iconName = iconThemeMatch.group(2)
+      return self.findIcon(iconName,
+        DEFAULT_ICON_DIR, themeName, DEFAULT_ICON_MAX_WIDTH)
     else:
-      return self.findIcon(icon,
-        DEFAULT_ICON_DIR, DEFAULT_ICON_THEME_DIR, DEFAULT_ICON_MAX_WIDTH)
+      themeName = DEFAULT_ICON_THEME
+      iconName = icon
+      return self.findIcon(iconName,
+        DEFAULT_ICON_DIR, themeName, DEFAULT_ICON_MAX_WIDTH)
   def findIcon(self, iconName, iconBaseDir, themeName, maxWidth):
     if iconName == None:
       return ""
