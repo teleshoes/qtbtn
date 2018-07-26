@@ -75,13 +75,17 @@ def main():
 
   configFile = args[0]
 
-  qml = QmlGenerator(orientation, configFile).getQml()
+  app = QApplication([])
+
+  geometry = app.desktop().availableGeometry()
+  (screenWidth, screenHeight) = (geometry.width(), geometry.height())
+
+  qml = QmlGenerator(screenWidth, screenHeight, orientation, configFile).getQml()
   fd, qmlFile = tempfile.mkstemp(prefix="qtbtn_", suffix=".qml")
   fh = open(qmlFile, 'w')
   fh.write(qml)
   fh.close()
 
-  app = QApplication([])
   widget = MainWindow(qmlFile)
 
   if useDbus:
@@ -128,8 +132,10 @@ def qtBtnDbusFactory(dbusService):
   return QtBtnDbus()
 
 class QmlGenerator():
-  def __init__(self, orientation, configFile):
+  def __init__(self, screenWidth, screenHeight, orientation, configFile):
     self.entries = Config(configFile).readConfFile()
+    self.screenWidth = screenWidth
+    self.screenHeight = screenHeight
     self.orientation = orientation
     self.landscapeMaxRowLen = 7
     self.portraitMaxRowLen = 4
@@ -174,7 +180,8 @@ class QmlGenerator():
     qmlRows = map(self.getRow, self.splitRows(maxRowLen))
     qml = ""
     qml += "Rectangle{\n"
-    qml += "  anchors.centerIn: parent\n"
+    qml += "  width: " + str(self.screenWidth) + "\n"
+    qml += "  height: " + str(self.screenHeight) + "\n"
     qml += "  Column{\n"
     qml += "    spacing: 10\n"
     qml += "    anchors.centerIn: parent\n"
