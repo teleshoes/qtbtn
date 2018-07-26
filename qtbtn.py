@@ -6,9 +6,10 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
-from PySide.QtGui import *
-from PySide.QtCore import *
-from PySide.QtDeclarative import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtQuick import *
+from PyQt5.QtWidgets import *
 from collections import deque
 
 import dbus
@@ -88,8 +89,8 @@ def main():
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     service = DBUS_SERVICE_PREFIX + "." + dbusServiceSuffix
     qtBtnDbus = qtBtnDbusFactory(service)
-    qtBtnDbus.signals.show.connect(widget.window().showFullScreen)
-    qtBtnDbus.signals.hide.connect(widget.window().hide)
+    qtBtnDbus.signals.show.connect(widget.showFullScreen)
+    qtBtnDbus.signals.hide.connect(widget.hide)
     qtBtnDbus.signals.quit.connect(QCoreApplication.instance().quit)
   else:
     widget.showFullScreen()
@@ -97,9 +98,9 @@ def main():
   app.exec_()
 
 class DbusQtSignals(QObject):
-  show = Signal()
-  hide = Signal()
-  quit = Signal()
+  show = pyqtSignal()
+  hide = pyqtSignal()
+  quit = pyqtSignal()
 
 def qtBtnDbusFactory(dbusService):
   class QtBtnDbus(dbus.service.Object):
@@ -217,7 +218,7 @@ class QmlGenerator():
 
   def getHeader(self):
     return """
-      import QtQuick 1.1
+      import QtQuick 2.3
 
       Rectangle {
     """
@@ -298,7 +299,7 @@ class CommandRunner(QObject):
   def __init__(self, infobars):
     QObject.__init__(self)
     self.infobars = infobars
-  @Slot(str)
+  @pyqtSlot(str)
   def runCommand(self, command):
     os.system(command)
     time.sleep(0.5)
@@ -322,10 +323,10 @@ class CommandRunner(QObject):
           msg = "ERROR"
       infobar.setProperty("text", msg)
 
-class MainWindow(QDeclarativeView):
+class MainWindow(QQuickView):
   def __init__(self, qmlFile):
     super(MainWindow, self).__init__(None)
-    self.setSource(qmlFile)
+    self.setSource(QUrl(qmlFile))
 
     infobars = self.rootObject().findChildren(QObject, "infobar")
     self.commandRunner = CommandRunner(infobars)
