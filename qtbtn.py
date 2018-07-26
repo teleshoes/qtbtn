@@ -15,6 +15,7 @@ from collections import deque
 import dbus
 import dbus.service
 import dbus.mainloop.glib
+import glob
 import os
 import re
 import sys
@@ -22,6 +23,10 @@ import subprocess
 import signal
 import tempfile
 import time
+
+DEFAULT_ICON_DIR = "/usr/share/icons"
+DEFAULT_ICON_THEME_DIR = "hicolor"
+DEFAULT_ICON_MAX_WIDTH = 48
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -374,11 +379,33 @@ class Config():
            , "rowbreak": rowbreak
            }
   def getIconPath(self, icon):
-    if icon != None and os.path.isfile(icon) and os.path.isabs(icon):
-      return icon
+    if icon != None and os.path.isfile(icon):
+      return os.path.abspath(icon)
     else:
+      return self.findIcon(icon,
+        DEFAULT_ICON_DIR, DEFAULT_ICON_THEME_DIR, DEFAULT_ICON_MAX_WIDTH)
+  def findIcon(self, iconName, iconBaseDir, themeName, maxWidth):
+    if iconName == None:
       return ""
 
+    iconName = re.sub('\.\w+$', '', iconName)
+    iconName = iconName.lower()
+
+    dirs = glob.glob(iconBaseDir + "/" + themeName + "/*x*/")
+    for iconDir in dirs:
+      m = re.match('/(\d+)x(\d)+/', iconDir)
+      if m:
+        dirWidth = int(m.group(1))
+        dirHeight = int(m.group(2))
+        if dirWidth > maxWidth:
+          next
+
+      for root, dirs, files in os.walk(iconDir):
+        for f in files:
+          if re.match('^' + iconName + '\.\w+$', f.lower()):
+            return root + "/" + f
+
+    return ""
   def readConfFile(self):
     if not os.path.exists(self.confFile):
       print >> sys.stderr, self.confFile + " is missing"
