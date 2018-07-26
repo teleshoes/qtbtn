@@ -22,9 +22,6 @@ import signal
 import tempfile
 import time
 
-PLATFORM_OTHER = 0
-PLATFORM_HARMATTAN = 1
-
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 DBUS_SERVICE_PREFIX = "org.teleshoes.qtbtn"
@@ -34,9 +31,9 @@ usage = """Usage:
 
   OPTIONS:
     --landscape
-      force landscape view in harmattan
+      does nothing, unimplemented
     --portrait
-      force portrait view in harmattan
+      does nothing, unimplemented
     --dbus=SERVICE_SUFFIX
       instead of showing the window, listen for dbus signals controlling it
       also, do not quit app on window close
@@ -77,14 +74,7 @@ def main():
 
   configFile = args[0]
 
-  issue = open('/etc/issue').read().strip().lower()
-  platform = None
-  if "harmattan" in issue:
-    platform = PLATFORM_HARMATTAN
-  else:
-    platform = PLATFORM_OTHER
-
-  qml = QmlGenerator(platform, orientation, configFile).getQml()
+  qml = QmlGenerator(orientation, configFile).getQml()
   fd, qmlFile = tempfile.mkstemp(prefix="qtbtn_", suffix=".qml")
   fh = open(qmlFile, 'w')
   fh.write(qml)
@@ -137,9 +127,8 @@ def qtBtnDbusFactory(dbusService):
   return QtBtnDbus()
 
 class QmlGenerator():
-  def __init__(self, platform, orientation, configFile):
+  def __init__(self, orientation, configFile):
     self.entries = Config(configFile).readConfFile()
-    self.platform = platform
     self.orientation = orientation
     self.landscapeMaxRowLen = 7
     self.portraitMaxRowLen = 4
@@ -178,39 +167,7 @@ class QmlGenerator():
     return ''.join(newlines)
 
   def getMain(self):
-    if self.platform == PLATFORM_HARMATTAN:
-      if self.orientation == "portrait":
-        orientLock = "LockPortrait"
-      elif self.orientation == "landscape":
-        orientLock = "LockLandscape"
-      else:
-        orientLock = "Automatic"
-
-      qml = ""
-      qml += "Page {\n"
-      qml += "  id: mainPage\n"
-      qml += "  orientationLock: PageOrientation." + orientLock + "\n"
-      qml += "  Rectangle {\n"
-      qml += "    id: portraitView\n"
-      qml += "    visible: inPortrait\n"
-      qml += "    anchors.fill: parent\n"
-      qml +=      self.indent(2, self.getLayout(self.portraitMaxRowLen))
-      qml += "  }\n"
-      qml += "  Rectangle {\n"
-      qml += "    id: landscapeView\n"
-      qml += "    visible: !inPortrait\n"
-      qml += "    anchors.fill: parent\n"
-      qml +=      self.indent(2, self.getLayout(self.landscapeMaxRowLen))
-      qml += "  }\n"
-      qml += "}\n"
-      qml += "initialPage: mainPage\n"
-      qml += "onInPortraitChanged: {\n"
-      qml += "  portraitView.visible = inPortrait\n"
-      qml += "  landscapeView.visible = !inPortrait\n"
-      qml += "}\n"
-      return qml
-    else:
-      return self.getLayout(self.landscapeMaxRowLen)
+    return self.getLayout(self.landscapeMaxRowLen)
 
   def getLayout(self, maxRowLen):
     qmlRows = map(self.getRow, self.splitRows(maxRowLen))
@@ -259,19 +216,11 @@ class QmlGenerator():
     return rows
 
   def getHeader(self):
-    if self.platform == PLATFORM_HARMATTAN:
-      return """
-        import QtQuick 1.1
-        import com.nokia.meego 1.1
+    return """
+      import QtQuick 1.1
 
-        PageStackWindow {
-      """
-    else:
-      return """
-        import QtQuick 1.1
-
-        Rectangle {
-      """
+      Rectangle {
+    """
   def getFooter(self):
     return """
       }
@@ -291,84 +240,58 @@ class QmlGenerator():
     """ % entry
 
   def getButton(self, entry):
-    if self.platform == PLATFORM_HARMATTAN:
-      return """
-        Component{
-          id: %(widgetId)s
-          Button {
+    return """
+      Component{
+        id: %(widgetId)s
+        Rectangle {
+          border.color: "black"
+          border.width: 5
+          property variant hover: false
+          property variant buttonColorDefault: "gray"
+          property variant buttonColorGradient: "white"
+          property variant buttonColor: buttonColorDefault
+          MouseArea {
+            hoverEnabled: true
+            anchors.fill: parent
             onClicked: commandRunner.runCommand("%(command)s")
-            Text {
-              text: "%(name)s"
-              font.pointSize: 16
-              anchors.bottom: parent.bottom
-              anchors.horizontalCenter: parent.horizontalCenter
-            }
-            Image {
-              source: "%(icon)s"
-              anchors.fill: parent
-              anchors.topMargin: 10
-              anchors.bottomMargin: 30
-              anchors.leftMargin: 10
-              anchors.rightMargin: 10
-            }
-            width: 100
-            height: 120
-          }
-        }
-       """ % entry
-    else:
-      return """
-        Component{
-          id: %(widgetId)s
-          Rectangle {
-            border.color: "black"
-            border.width: 5
-            property variant hover: false
-            property variant buttonColorDefault: "gray"
-            property variant buttonColorGradient: "white"
-            property variant buttonColor: buttonColorDefault
-            MouseArea {
-              hoverEnabled: true
-              anchors.fill: parent
-              onClicked: commandRunner.runCommand("%(command)s")
-              function setColor(){
-                if(this.pressed){
-                  parent.buttonColor = Qt.lighter(parent.buttonColorDefault)
-                }else if(this.containsMouse){
-                  parent.buttonColor = Qt.darker(parent.buttonColorDefault)
-                }else{
-                  parent.buttonColor = parent.buttonColorDefault
-                }
+            function setColor(){
+              if(this.pressed){
+                parent.buttonColor = Qt.lighter(parent.buttonColorDefault)
+              }else if(this.containsMouse){
+                parent.buttonColor = Qt.darker(parent.buttonColorDefault)
+              }else{
+                parent.buttonColor = parent.buttonColorDefault
               }
-              onEntered: setColor()
-              onExited: setColor()
-              onPressed: setColor()
-              onReleased: setColor()
             }
-            gradient: Gradient {
-              GradientStop { position: 0.0; color: buttonColor }
-              GradientStop { position: 1.0; color: buttonColorGradient }
-            }
-
-            Text {
-              text: "%(name)s"
-              font.pointSize: 16
-              anchors.bottom: parent.bottom
-              anchors.horizontalCenter: parent.horizontalCenter
-            }
-            Image {
-              source: "%(icon)s"
-              anchors.fill: parent
-              anchors.topMargin: 10
-              anchors.bottomMargin: 30
-              anchors.leftMargin: 10
-              anchors.rightMargin: 10
-            }
-            width: 100
-            height: 120
+            onEntered: setColor()
+            onExited: setColor()
+            onPressed: setColor()
+            onReleased: setColor()
           }
+          gradient: Gradient {
+            GradientStop { position: 0.0; color: buttonColor }
+            GradientStop { position: 1.0; color: buttonColorGradient }
+          }
+
+          Text {
+            text: "%(name)s"
+            font.pointSize: 16
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+          }
+          Image {
+            source: "%(icon)s"
+            anchors.fill: parent
+            anchors.topMargin: 10
+            anchors.bottomMargin: 30
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+          }
+          width: 100
+          height: 120
         }
-      """ % entry
+      }
+    """ % entry
 
 
 class CommandRunner(QObject):
@@ -429,14 +352,8 @@ class Config():
   def getIconPath(self, icon):
     if icon != None and os.path.isfile(icon) and os.path.isabs(icon):
       return icon
-    elif icon != None and os.path.exists(self.wrapIconMeego(icon)):
-      return self.wrapIconMeego(icon)
     else:
       return ""
-  def wrapIconMeego(self, iconPath):
-    if iconPath.endswith(".png"):
-      iconPath = icon[:-4]
-    return "/usr/share/themes/blanco/meegotouch/icons/" + iconPath + ".png"
 
   def readConfFile(self):
     if not os.path.exists(self.confFile):
