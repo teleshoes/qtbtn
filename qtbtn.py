@@ -32,9 +32,17 @@ usage = """Usage:
 
   OPTIONS:
     --landscape
-      does nothing, unimplemented
+      align top of UI with longest screen dimenstion
+        if screen width < screen height:
+          rotate UI 90 degrees clockwise
+        else
+          do not rotate UI
     --portrait
-      does nothing, unimplemented
+      align top of UI with shortest screen dimenstion
+        if screen width > screen height:
+          rotate UI 90 degrees clockwise
+        else
+          do not rotate UI
     --dbus=SERVICE_SUFFIX
       instead of showing the window, listen for dbus signals controlling it
       also, do not quit app on window close
@@ -174,14 +182,22 @@ class QmlGenerator():
     return ''.join(newlines)
 
   def getMain(self):
-    return self.getLayout(self.landscapeMaxRowLen)
+    if self.orientation == "landscape" and self.screenWidth < self.screenHeight:
+      rotationDegrees = 90
+    elif self.orientation == "portrait" and self.screenWidth > self.screenHeight:
+      rotationDegrees = 90
+    else:
+      rotationDegrees = 0
 
-  def getLayout(self, maxRowLen):
+    return self.getLayout(self.landscapeMaxRowLen, rotationDegrees)
+
+  def getLayout(self, maxRowLen, rotationDegrees):
     qmlRows = map(self.getRow, self.splitRows(maxRowLen))
     qml = ""
     qml += "Rectangle{\n"
     qml += "  width: " + str(self.screenWidth) + "\n"
     qml += "  height: " + str(self.screenHeight) + "\n"
+    qml += "  rotation: " + str(rotationDegrees) + "\n"
     qml += "  Column{\n"
     qml += "    spacing: 10\n"
     qml += "    anchors.centerIn: parent\n"
