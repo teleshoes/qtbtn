@@ -26,7 +26,7 @@ import time
 
 DEFAULT_ICON_DIR = "/usr/share/icons"
 DEFAULT_ICON_THEME_DIR = "hicolor"
-DEFAULT_ICON_MAX_WIDTH = 48
+DEFAULT_ICON_MAX_WIDTH = 256
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
