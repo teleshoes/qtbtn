@@ -316,8 +316,8 @@ class QmlGenerator():
             anchors.leftMargin: 10
             anchors.rightMargin: 10
           }
-          width: 100
-          height: 120
+          width: 90
+          height: 100
         }
       }
     """ % entry
