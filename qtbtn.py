@@ -327,6 +327,9 @@ class CommandRunner(QObject):
   def __init__(self, infobars):
     QObject.__init__(self)
     self.infobars = infobars
+    self.infobarsTimer = QTimer(self)
+    self.infobarsTimer.timeout.connect(self.updateInfobars)
+    self.infobarsTimer.start(1000)
   @pyqtSlot(str)
   def runCommand(self, command):
     os.system(command)
