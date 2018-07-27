@@ -262,7 +262,7 @@ class QmlGenerator():
           Text {
             property string command: "%(command)s"
             objectName: "infobar"
-            font.pointSize: 16
+            font.pointSize: 32
             width: 100
           }
         }
