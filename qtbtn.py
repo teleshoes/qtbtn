@@ -70,13 +70,12 @@ def main():
   dbusServiceSuffix=None
   while len(args) > 0 and args[0].startswith("-"):
     arg = args.pop(0)
-    dbusMatch = re.match("--dbus=([a-z]+)", arg)
     if arg == "--landscape":
       orientation = "landscape"
     elif arg == "--portrait":
       orientation = "portrait"
-    elif dbusMatch:
-      dbusServiceSuffix = dbusMatch.group(1)
+    elif RE.match("--dbus=([a-z]+)", arg):
+      dbusServiceSuffix = RE.group(1)
       useDbus = True
     else:
       print >> sys.stderr, usage
@@ -387,13 +386,11 @@ class Config():
     if icon == None:
       return ""
 
-    iconThemeMatch = re.match('\s*(\w+)\s*:\s*(.*)', icon)
-
     if icon != None and os.path.isfile(icon):
       return os.path.abspath(icon)
-    elif iconThemeMatch:
-      themeName = iconThemeMatch.group(1)
-      iconName = iconThemeMatch.group(2)
+    elif RE.match('\s*(\w+)\s*:\s*(.*)', icon):
+      themeName = RE.group(1)
+      iconName = RE.group(2)
       return self.findIcon(iconName,
         DEFAULT_ICON_DIR, themeName, DEFAULT_ICON_MAX_WIDTH)
     else:
@@ -405,21 +402,20 @@ class Config():
     if iconName == None:
       return ""
 
-    iconName = re.sub('\.\w+$', '', iconName)
+    iconName = RE.sub('\.\w+$', '', iconName)
     iconName = iconName.lower()
 
     dirs = glob.glob(iconBaseDir + "/" + themeName + "/*x*/")
     for iconDir in dirs:
-      m = re.match('/(\d+)x(\d)+/', iconDir)
-      if m:
-        dirWidth = int(m.group(1))
-        dirHeight = int(m.group(2))
+      if RE.match('/(\d+)x(\d)+/', iconDir):
+        dirWidth = int(RE.group(1))
+        dirHeight = int(RE.group(2))
         if dirWidth > maxWidth:
           next
 
       for root, dirs, files in os.walk(iconDir):
         for f in files:
-          if re.match('^' + iconName + '\.\w+$', f.lower()):
+          if RE.match('^' + iconName + '\.\w+$', f.lower()):
             return root + "/" + f
 
     return ""
@@ -430,7 +426,7 @@ class Config():
     cmds = []
     number = 0
     for line in file(self.confFile).readlines():
-      if re.match('^\s*#', line):
+      if RE.match('^\s*#', line):
         continue
       line = line.strip()
       if len(line) > 0:
@@ -450,6 +446,21 @@ class Config():
         else:
           raise Exception("Error parsing config line: " + line)
     return cmds
+
+#threadsafety: DANGEROUS AF
+class RE:
+  lastMatch = None
+
+  @staticmethod
+  def match(regex, s):
+    RE.lastMatch = re.match(regex, s)
+    return RE.lastMatch
+  @staticmethod
+  def sub(regex, repl, s):
+    return re.sub(regex, repl, s)
+  @staticmethod
+  def group(num):
+    return RE.lastMatch.group(num)
 
 if __name__ == "__main__":
   sys.exit(main())
