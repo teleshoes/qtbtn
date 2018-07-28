@@ -93,13 +93,15 @@ def main():
   geometry = app.desktop().availableGeometry()
   (screenWidth, screenHeight) = (geometry.width(), geometry.height())
 
-  qml = QmlGenerator(screenWidth, screenHeight, orientation, configFile).getQml()
+  entries = Config(configFile).readConfFile()
+
+  qml = QmlGenerator(screenWidth, screenHeight, orientation, entries).getQml()
   fd, qmlFile = tempfile.mkstemp(prefix="qtbtn_", suffix=".qml")
   fh = open(qmlFile, 'w')
   fh.write(qml)
   fh.close()
 
-  widget = MainWindow(qmlFile)
+  widget = MainWindow(qmlFile, entries)
 
   if useDbus:
     app.setQuitOnLastWindowClosed(False)
@@ -145,8 +147,8 @@ def qtBtnDbusFactory(dbusService):
   return QtBtnDbus()
 
 class QmlGenerator():
-  def __init__(self, screenWidth, screenHeight, orientation, configFile):
-    self.entries = Config(configFile).readConfFile()
+  def __init__(self, screenWidth, screenHeight, orientation, entries):
+    self.entries = entries
     self.screenWidth = screenWidth
     self.screenHeight = screenHeight
     self.orientation = orientation
@@ -260,7 +262,7 @@ class QmlGenerator():
         Component{
           id: %(widgetId)s
           Text {
-            property string command: "%(command)s"
+            property string infobarWidgetId: "%(widgetId)s"
             objectName: "infobar"
             font.pointSize: 32
             width: 100
@@ -324,43 +326,43 @@ class QmlGenerator():
 
 
 class CommandRunner(QObject):
-  def __init__(self, infobars):
+  def __init__(self, entries, infobarWidgets):
     QObject.__init__(self)
-    self.infobars = infobars
+    self.entries = entries
+    self.infobarWidgets = infobarWidgets
     self.infobarsTimer = QTimer(self)
     self.infobarsTimer.timeout.connect(self.updateInfobars)
     self.infobarsTimer.start(1000)
+    self.cmdsByWidgetId = {}
+    for entry in entries:
+      self.cmdsByWidgetId[entry["widgetId"]] = entry["command"]
   @pyqtSlot(str)
   def runCommand(self, command):
     os.system(command)
     time.sleep(0.5)
     self.updateInfobars()
   def updateInfobars(self):
-    cmdCache = {}
-    for infobar in self.infobars:
-      cmd = infobar.property("command")
-      if cmd in cmdCache:
-        msg = cmdCache[cmd]
-      else:
-        print "  running infobar command: " + cmd
+    for infobarWidget in self.infobarWidgets:
+      widgetId = infobarWidget.property("infobarWidgetId")
+      cmd = self.cmdsByWidgetId[widgetId]
+      print "  running infobar command: " + cmd
 
-        try:
-          proc = subprocess.Popen(['sh', '-c', cmd],
-            stdout=subprocess.PIPE)
-          msg = proc.stdout.readline()
-          proc.terminate()
-          cmdCache[cmd] = msg
-        except:
-          msg = "ERROR"
-      infobar.setProperty("text", msg)
+      try:
+        proc = subprocess.Popen(['sh', '-c', cmd],
+          stdout=subprocess.PIPE)
+        msg = proc.stdout.read()
+        proc.terminate()
+      except:
+        msg = "ERROR"
+      infobarWidget.setProperty("text", msg)
 
 class MainWindow(QQuickView):
-  def __init__(self, qmlFile):
+  def __init__(self, qmlFile, entries):
     super(MainWindow, self).__init__(None)
     self.setSource(QUrl(qmlFile))
 
-    infobars = self.rootObject().findChildren(QObject, "infobar")
-    self.commandRunner = CommandRunner(infobars)
+    infobarWidgets = self.rootObject().findChildren(QObject, "infobar")
+    self.commandRunner = CommandRunner(entries, infobarWidgets)
     self.commandRunner.updateInfobars()
     self.rootContext().setContextProperty("commandRunner", self.commandRunner)
 
