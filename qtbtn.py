@@ -430,7 +430,8 @@ class Config():
     cmds = []
     number = 0
     for line in file(self.confFile).readlines():
-      line = line.partition('#')[0]
+      if re.match('^\s*#', line):
+        continue
       line = line.strip()
       if len(line) > 0:
         csv = line.split(',', 3)
