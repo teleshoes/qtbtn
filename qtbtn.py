@@ -425,26 +425,44 @@ class Config():
       sys.exit(1)
     cmds = []
     number = 0
+
+    entries = []
+    curEntry = None
     for line in file(self.confFile).readlines():
-      if RE.match('^\s*#', line):
-        continue
       line = line.strip()
-      if len(line) > 0:
-        csv = line.split(',', 3)
-        if len(csv) == 1 and csv[0].strip() == "rowbreak":
-          cmds.append(self.getEntry(number, None, None, None, False, True))
-        elif len(csv) == 2 and csv[0].strip() == "infobar":
-          cmd = csv[1].strip()
-          cmds.append(self.getEntry(number, None, None, cmd, True))
-          number+=1
-        elif len(csv) == 3:
-          name = csv[0].strip()
-          icon = csv[1].strip()
-          cmd = csv[2].strip()
-          cmds.append(self.getEntry(number, name, icon, cmd))
-          number+=1
-        else:
-          raise Exception("Error parsing config line: " + line)
+      if len(line) == 0:
+        continue
+      elif RE.match('^#', line):
+        continue
+      elif RE.match('^(.+)\\\\$', line):
+        if curEntry == None:
+          curEntry = ""
+        curEntry += RE.group(1)
+      else:
+        if curEntry == None:
+          curEntry = ""
+        curEntry += line
+        entries.append(curEntry)
+        curEntry = None
+    if curEntry != None:
+      entries += curEntry
+
+    for entry in entries:
+      csv = entry.split(',', 3)
+      if len(csv) == 1 and csv[0].strip() == "rowbreak":
+        cmds.append(self.getEntry(number, None, None, None, False, True))
+      elif len(csv) == 2 and csv[0].strip() == "infobar":
+        cmd = csv[1].strip()
+        cmds.append(self.getEntry(number, None, None, cmd, True))
+        number+=1
+      elif len(csv) == 3:
+        name = csv[0].strip()
+        icon = csv[1].strip()
+        cmd = csv[2].strip()
+        cmds.append(self.getEntry(number, name, icon, cmd))
+        number+=1
+      else:
+        raise Exception("Error parsing config line: " + line)
     return cmds
 
 #threadsafety: DANGEROUS AF
