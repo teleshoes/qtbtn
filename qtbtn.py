@@ -318,8 +318,8 @@ class QmlGenerator():
             anchors.leftMargin: 10
             anchors.rightMargin: 10
           }
-          width: 90
-          height: 100
+          width: 150
+          height: 180
         }
       }
     """ % entry
