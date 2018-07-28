@@ -305,7 +305,7 @@ class QmlGenerator():
 
           Text {
             text: "%(name)s"
-            font.pointSize: 16
+            font.pointSize: 20
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
           }
