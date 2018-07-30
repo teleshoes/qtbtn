@@ -330,17 +330,27 @@ class CommandRunner(QObject):
     self.mainWindow = mainWindow
     self.entries = entries
     self.infobarWidgets = infobarWidgets
-    self.infobarsTimer = QTimer(self)
-    self.infobarsTimer.timeout.connect(self.updateInfobars)
-    self.infobarsTimer.start(1000)
+
     self.cmdsByWidgetId = {}
     for entry in entries:
       self.cmdsByWidgetId[entry["widgetId"]] = entry["command"]
+
+    self.infobarsTimerIntervalMillis = 1000
+    self.infobarsTimer = QTimer(self)
+    self.infobarsTimer.timeout.connect(self.updateInfobars)
+    self.setInfobarsTimerEnabled(True)
+    self.mainWindow.activeChanged.connect(self.onMainWindowActiveChanged)
   @pyqtSlot(str)
   def runCommand(self, command):
     os.system(command)
     time.sleep(0.5)
     self.updateInfobars()
+  def onMainWindowActiveChanged(self):
+    self.setInfobarsTimerEnabled(self.mainWindow.isActive())
+  def setInfobarsTimerEnabled(self, enabled):
+    self.infobarsTimer.stop()
+    if enabled:
+      self.infobarsTimer.start(self.infobarsTimerIntervalMillis)
   def updateInfobars(self):
     if not self.mainWindow.isActive():
       return
