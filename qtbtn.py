@@ -342,6 +342,9 @@ class CommandRunner(QObject):
     time.sleep(0.5)
     self.updateInfobars()
   def updateInfobars(self):
+    if not self.mainWindow.isActive():
+      return
+
     for infobarWidget in self.infobarWidgets:
       widgetId = infobarWidget.property("infobarWidgetId")
       cmd = self.cmdsByWidgetId[widgetId]
