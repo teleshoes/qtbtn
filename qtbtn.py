@@ -325,8 +325,9 @@ class QmlGenerator():
 
 
 class CommandRunner(QObject):
-  def __init__(self, entries, infobarWidgets):
-    QObject.__init__(self)
+  def __init__(self, mainWindow, entries, infobarWidgets):
+    QObject.__init__(self, mainWindow)
+    self.mainWindow = mainWindow
     self.entries = entries
     self.infobarWidgets = infobarWidgets
     self.infobarsTimer = QTimer(self)
@@ -361,7 +362,7 @@ class MainWindow(QQuickView):
     self.setSource(QUrl(qmlFile))
 
     infobarWidgets = self.rootObject().findChildren(QObject, "infobar")
-    self.commandRunner = CommandRunner(entries, infobarWidgets)
+    self.commandRunner = CommandRunner(self, entries, infobarWidgets)
     self.commandRunner.updateInfobars()
     self.rootContext().setContextProperty("commandRunner", self.commandRunner)
 
