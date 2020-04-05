@@ -48,6 +48,12 @@ usage = """Usage:
           rotate UI 90 degrees clockwise
         else
           do not rotate UI
+
+    --fullscreen | -f
+      show window fullscreen (this is the default)
+    --window | -w
+      show regular, non-fullscreen window
+
     --dbus=SERVICE_SUFFIX
       instead of showing the window, listen for dbus signals controlling it
       also, do not quit app on window close
@@ -66,6 +72,7 @@ def main():
   args.pop(0)
 
   orientation=None
+  fullscreen=True
   useDbus=False
   dbusServiceSuffix=None
   while len(args) > 0 and args[0].startswith("-"):
@@ -74,6 +81,10 @@ def main():
       orientation = "landscape"
     elif arg == "--portrait":
       orientation = "portrait"
+    elif arg == "--fullscreen" or arg == "-f":
+      fullscreen=True
+    elif arg == "--window" or arg == "-w":
+      fullscreen=False
     elif RE.match("--dbus=([a-z]+)", arg):
       dbusServiceSuffix = RE.group(1)
       useDbus = True
@@ -107,11 +118,17 @@ def main():
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     service = DBUS_SERVICE_PREFIX + "." + dbusServiceSuffix
     qtBtnDbus = qtBtnDbusFactory(service)
-    qtBtnDbus.signals.show.connect(widget.showFullScreen)
+    if fullscreen:
+      qtBtnDbus.signals.show.connect(widget.showFullScreen)
+    else:
+      qtBtnDbus.signals.show.connect(widget.show)
     qtBtnDbus.signals.hide.connect(widget.hide)
     qtBtnDbus.signals.quit.connect(QCoreApplication.instance().quit)
   else:
-    widget.showFullScreen()
+    if fullscreen:
+      widget.showFullScreen()
+    else:
+      widget.show()
 
   app.exec_()
 
