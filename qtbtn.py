@@ -37,13 +37,13 @@ usage = """Usage:
 
   OPTIONS:
     --landscape
-      align top of UI with longest screen dimenstion
+      align top of UI with longest screen dimension
         if screen width < screen height:
           rotate UI 90 degrees clockwise
         else
           do not rotate UI
     --portrait
-      align top of UI with shortest screen dimenstion
+      align top of UI with shortest screen dimension
         if screen width > screen height:
           rotate UI 90 degrees clockwise
         else
