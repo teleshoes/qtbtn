@@ -78,11 +78,11 @@ def main():
       dbusServiceSuffix = RE.group(1)
       useDbus = True
     else:
-      print >> sys.stderr, usage
+      sys.stderr.write(usage)
       sys.exit(2)
 
   if len(args) != 1:
-    print >> sys.stderr, usage
+    sys.stderr.write(usage)
     sys.exit(2)
 
   configFile = args[0]
@@ -130,17 +130,17 @@ def qtBtnDbusFactory(dbusService):
 
     @dbus.service.method(dbusService)
     def show(self):
-      print "show: " + dbusService
+      print("show: " + dbusService)
       self.signals.show.emit()
 
     @dbus.service.method(dbusService)
     def hide(self):
-      print "hide: " + dbusService
+      print("hide: " + dbusService)
       self.signals.hide.emit()
 
     @dbus.service.method(dbusService)
     def quit(self):
-      print "quit: " + dbusService
+      print("quit: " + dbusService)
       self.signals.quit.emit()
 
   return QtBtnDbus()
@@ -176,12 +176,15 @@ class QmlGenerator():
       lines.pop()
     while len(lines) > 0 and len(lines[0].strip(' ')) == 0:
       lines.pop(0)
-    minspaces = sys.maxint
+    minspaces = None
     for line in lines:
       if len(line.strip(' ')) == 0:
         continue
       spaces = len(line) - len(line.lstrip(' '))
-      minspaces = min(spaces, minspaces)
+      if minspaces == None:
+        minspaces = spaces
+      else:
+        minspaces = min(spaces, minspaces)
     newlines = []
     for line in lines:
       newlines.append('  ' * level + line[minspaces:] + "\n")
@@ -358,12 +361,12 @@ class CommandRunner(QObject):
     for infobarWidget in self.infobarWidgets:
       widgetId = infobarWidget.property("infobarWidgetId")
       cmd = self.cmdsByWidgetId[widgetId]
-      print "  running infobar command: " + cmd
+      print("  running infobar command: " + cmd)
 
       try:
         proc = subprocess.Popen(['sh', '-c', cmd],
           stdout=subprocess.PIPE)
-        msg = proc.stdout.read()
+        msg = proc.stdout.read().decode()
         proc.terminate()
       except:
         msg = "ERROR"
@@ -442,7 +445,7 @@ class Config():
 
     entries = []
     curEntry = None
-    for line in file(self.confFile).readlines():
+    for line in open(self.confFile, "r").readlines():
       line = line.strip()
       if len(line) == 0:
         continue
