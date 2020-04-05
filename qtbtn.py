@@ -58,6 +58,11 @@ usage = """Usage:
       NOTE:
         this affects --landscape/--portrait determination
 
+    --center
+      align widgets in the center (this is the default)
+    --left
+      align widgets on the left
+
     --dbus=SERVICE_SUFFIX
       instead of showing the window, listen for dbus signals controlling it
       also, do not quit app on window close
@@ -79,6 +84,7 @@ def main():
   fullscreen=True
   width=None
   height=None
+  center=True
   useDbus=False
   dbusServiceSuffix=None
   while len(args) > 0 and args[0].startswith("-"):
@@ -94,6 +100,10 @@ def main():
     elif RE.match("--size=(\d+)x(\d+)", arg):
       width = int(RE.group(1))
       height = int(RE.group(2))
+    elif arg == "--center":
+      center = True
+    elif arg == "--left":
+      center = False
     elif RE.match("--dbus=([a-z]+)", arg):
       dbusServiceSuffix = RE.group(1)
       useDbus = True
@@ -115,7 +125,7 @@ def main():
 
   entries = Config(configFile).readConfFile()
 
-  qml = QmlGenerator(width, height, orientation, entries).getQml()
+  qml = QmlGenerator(width, height, orientation, center, entries).getQml()
   fd, qmlFile = tempfile.mkstemp(prefix="qtbtn_", suffix=".qml")
   fh = open(qmlFile, 'w')
   fh.write(qml)
@@ -174,11 +184,12 @@ def qtBtnDbusFactory(dbusService):
   return QtBtnDbus()
 
 class QmlGenerator():
-  def __init__(self, width, height, orientation, entries):
+  def __init__(self, width, height, orientation, center, entries):
     self.entries = entries
     self.width = width
     self.height = height
     self.orientation = orientation
+    self.center = center
     self.landscapeMaxRowLen = 7
     self.portraitMaxRowLen = 4
 
@@ -230,6 +241,10 @@ class QmlGenerator():
 
   def getLayout(self, maxRowLen, rotationDegrees):
     qmlRows = map(self.getRow, self.splitRows(maxRowLen))
+    if self.center:
+      anchorFct = "centerIn"
+    else:
+      anchorFct = "fill"
     qml = ""
     qml += "Rectangle{\n"
     qml += "  width: " + str(self.width) + "\n"
@@ -237,7 +252,7 @@ class QmlGenerator():
     qml += "  rotation: " + str(rotationDegrees) + "\n"
     qml += "  Column{\n"
     qml += "    spacing: 10\n"
-    qml += "    anchors.centerIn: parent\n"
+    qml += "    anchors." + anchorFct + ": parent\n"
     qml +=      self.indent(2, "\n".join(qmlRows))
     qml += "  }\n"
     qml += "}\n"
