@@ -53,6 +53,10 @@ usage = """Usage:
       show window fullscreen (this is the default)
     --window | -w
       show regular, non-fullscreen window
+    --size=WIDTHxHEIGHT
+      set the window size, and the content size
+      NOTE:
+        this affects --landscape/--portrait determination
 
     --dbus=SERVICE_SUFFIX
       instead of showing the window, listen for dbus signals controlling it
@@ -73,6 +77,8 @@ def main():
 
   orientation=None
   fullscreen=True
+  width=None
+  height=None
   useDbus=False
   dbusServiceSuffix=None
   while len(args) > 0 and args[0].startswith("-"):
@@ -85,6 +91,9 @@ def main():
       fullscreen=True
     elif arg == "--window" or arg == "-w":
       fullscreen=False
+    elif RE.match("--size=(\d+)x(\d+)", arg):
+      width = int(RE.group(1))
+      height = int(RE.group(2))
     elif RE.match("--dbus=([a-z]+)", arg):
       dbusServiceSuffix = RE.group(1)
       useDbus = True
@@ -100,18 +109,20 @@ def main():
 
   app = QApplication([])
 
-  geometry = app.desktop().availableGeometry()
-  (screenWidth, screenHeight) = (geometry.width(), geometry.height())
+  if width == None or height == None:
+    geometry = app.desktop().availableGeometry()
+    (width, height) = (geometry.width(), geometry.height())
 
   entries = Config(configFile).readConfFile()
 
-  qml = QmlGenerator(screenWidth, screenHeight, orientation, entries).getQml()
+  qml = QmlGenerator(width, height, orientation, entries).getQml()
   fd, qmlFile = tempfile.mkstemp(prefix="qtbtn_", suffix=".qml")
   fh = open(qmlFile, 'w')
   fh.write(qml)
   fh.close()
 
   widget = MainWindow(qmlFile, entries)
+  widget.resize(width, height)
 
   if useDbus:
     app.setQuitOnLastWindowClosed(False)
@@ -163,10 +174,10 @@ def qtBtnDbusFactory(dbusService):
   return QtBtnDbus()
 
 class QmlGenerator():
-  def __init__(self, screenWidth, screenHeight, orientation, entries):
+  def __init__(self, width, height, orientation, entries):
     self.entries = entries
-    self.screenWidth = screenWidth
-    self.screenHeight = screenHeight
+    self.width = width
+    self.height = height
     self.orientation = orientation
     self.landscapeMaxRowLen = 7
     self.portraitMaxRowLen = 4
@@ -208,9 +219,9 @@ class QmlGenerator():
     return ''.join(newlines)
 
   def getMain(self):
-    if self.orientation == "landscape" and self.screenWidth < self.screenHeight:
+    if self.orientation == "landscape" and self.width < self.height:
       rotationDegrees = 90
-    elif self.orientation == "portrait" and self.screenWidth > self.screenHeight:
+    elif self.orientation == "portrait" and self.width > self.height:
       rotationDegrees = 90
     else:
       rotationDegrees = 0
@@ -221,8 +232,8 @@ class QmlGenerator():
     qmlRows = map(self.getRow, self.splitRows(maxRowLen))
     qml = ""
     qml += "Rectangle{\n"
-    qml += "  width: " + str(self.screenWidth) + "\n"
-    qml += "  height: " + str(self.screenHeight) + "\n"
+    qml += "  width: " + str(self.width) + "\n"
+    qml += "  height: " + str(self.height) + "\n"
     qml += "  rotation: " + str(rotationDegrees) + "\n"
     qml += "  Column{\n"
     qml += "    spacing: 10\n"
