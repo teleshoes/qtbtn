@@ -410,6 +410,7 @@ class CommandRunner(QObject):
         proc = subprocess.Popen(['sh', '-c', cmd],
           stdout=subprocess.PIPE)
         msg = proc.stdout.read().decode(encoding="utf-8", errors="replace")
+        msg = msg.strip()
         proc.terminate()
       except:
         msg = "ERROR"
