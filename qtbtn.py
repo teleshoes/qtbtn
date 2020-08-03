@@ -432,7 +432,9 @@ class MainWindow(QQuickView):
 class Config():
   def __init__(self, confFile):
     self.confFile = confFile
-  def getEntry(self, number, name, icon, command, infobar=False, rowbreak=False):
+  def getEntry(self, number,
+               name=None, icon=None, command=None,
+               infobar=False, rowbreak=False):
     if rowbreak:
       widgetId = None
     elif infobar:
@@ -514,16 +516,16 @@ class Config():
     for entry in entries:
       csv = entry.split(',', 3)
       if len(csv) == 1 and csv[0].strip() == "rowbreak":
-        cmds.append(self.getEntry(number, None, None, None, False, True))
+        cmds.append(self.getEntry(number, rowbreak=True))
       elif len(csv) == 2 and csv[0].strip() == "infobar":
-        cmd = csv[1].strip()
-        cmds.append(self.getEntry(number, None, None, cmd, True))
+        command = csv[1].strip()
+        cmds.append(self.getEntry(number, command=command, infobar=True))
         number+=1
       elif len(csv) == 3:
         name = csv[0].strip()
         icon = csv[1].strip()
-        cmd = csv[2].strip()
-        cmds.append(self.getEntry(number, name, icon, cmd))
+        command = csv[2].strip()
+        cmds.append(self.getEntry(number, name=name, icon=icon, command=command))
         number+=1
       else:
         raise Exception("Error parsing config line: " + line)
