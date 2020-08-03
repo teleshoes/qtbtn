@@ -366,8 +366,8 @@ class QmlGenerator():
             anchors.leftMargin: 10
             anchors.rightMargin: 10
           }
-          width: 150
-          height: 180
+          width: %(btnWidth)s
+          height: %(btnHeight)s
         }
       }
     """ % entry
@@ -434,6 +434,7 @@ class Config():
     self.confFile = confFile
   def getEntry(self, number,
                name=None, icon=None, command=None,
+               btnWidth=None, btnHeight=None,
                infobar=False, rowbreak=False):
     if rowbreak:
       widgetId = None
@@ -447,6 +448,8 @@ class Config():
            , "command": command
            , "infobar": infobar
            , "rowbreak": rowbreak
+           , "btnWidth": btnWidth
+           , "btnHeight": btnHeight
            }
   def getIconPath(self, icon):
     if icon == None:
@@ -514,18 +517,30 @@ class Config():
       entries += curEntry
 
     for entry in entries:
-      csv = entry.split(',', 3)
+      csv = entry.split(',', 5)
       if len(csv) == 1 and csv[0].strip() == "rowbreak":
         cmds.append(self.getEntry(number, rowbreak=True))
       elif len(csv) == 2 and csv[0].strip() == "infobar":
         command = csv[1].strip()
         cmds.append(self.getEntry(number, command=command, infobar=True))
         number+=1
+      elif len(csv) == 5:
+        name = csv[0].strip()
+        btnWidth = csv[1].strip()
+        btnHeight = csv[2].strip()
+        icon = csv[3].strip()
+        command = csv[4].strip()
+        cmds.append(self.getEntry(number, name=name, icon=icon, command=command,
+                    btnWidth=btnWidth, btnHeight=btnHeight))
+        number+=1
       elif len(csv) == 3:
         name = csv[0].strip()
         icon = csv[1].strip()
         command = csv[2].strip()
-        cmds.append(self.getEntry(number, name=name, icon=icon, command=command))
+        btnWidth = 150
+        btnHeight = 180
+        cmds.append(self.getEntry(number, name=name, icon=icon, command=command,
+                    btnWidth=btnWidth, btnHeight=btnHeight))
         number+=1
       else:
         raise Exception("Error parsing config line: " + line)
