@@ -201,6 +201,8 @@ class QmlGenerator():
     for entry in self.entries:
       if entry['entryType'] == "rowbreak":
         qml += "\n"
+      elif entry['entryType'] == "colbreak":
+        qml += "\n"
       elif entry['entryType'] == "infobar":
         qml += self.indent(1, self.getInfobar(entry))
       elif entry['entryType'] == "button":
@@ -242,7 +244,7 @@ class QmlGenerator():
     return self.getLayout(self.landscapeMaxRowLen, rotationDegrees)
 
   def getLayout(self, maxRowLen, rotationDegrees):
-    qmlRows = map(self.getRow, self.splitRows(maxRowLen))
+    gridCols = self.splitGrid(maxRowLen)
     if self.center:
       anchorFct = "centerIn"
     else:
@@ -252,12 +254,18 @@ class QmlGenerator():
     qml += "  width: " + str(self.width) + "\n"
     qml += "  height: " + str(self.height) + "\n"
     qml += "  rotation: " + str(rotationDegrees) + "\n"
-    qml += "  Column{\n"
-    qml += "    spacing: 10\n"
+    qml += "  Row{\n"
     qml += "    anchors." + anchorFct + ": parent\n"
-    qml +=      self.indent(2, "\n".join(qmlRows))
+    qml += "    spacing: 10\n"
+    for colRows in gridCols:
+      qmlRows = map(self.getRow, colRows)
+      qml += "    Column{\n"
+      qml += "      spacing: 10\n"
+      qml +=        self.indent(3, "\n".join(qmlRows))
+      qml += "    }\n"
     qml += "  }\n"
     qml += "}\n"
+    print(qml)
     return qml
 
   def getRow(self, row):
@@ -269,31 +277,31 @@ class QmlGenerator():
     qml += "}"
     return qml
 
-
-  def splitRows(self, maxRowLen):
-    rows = []
-    row = []
+  def splitGrid(self, maxRowLen):
+    gridCols = []
+    curCol = None
+    curRow = None
     for entry in self.entries:
+      if curCol == None:
+        curCol = []
+        gridCols.append(curCol)
+
+      if curRow == None:
+        curRow = []
+        curCol.append(curRow)
+
       if entry['entryType'] == "infobar":
-        if len(row) > 0:
-          rows.append(row)
-          row = []
-        rows.append([entry])
-      elif entry['entryType'] == "rowbreak":
-        if len(row) > 0:
-          rows.append(row)
-          row = []
+        curCol.append([entry])
+        curRow = None
       elif entry['entryType'] == "button":
-        if len(row) >= maxRowLen:
-          rows.append(row)
-          row = []
-        row.append(entry)
-      else:
-        raise ValueError("unknown entryType: " + str(entryType))
-    if len(row) > 0:
-      rows.append(row)
-      row = []
-    return rows
+        curRow.append(entry)
+      elif entry['entryType'] == "rowbreak":
+        curRow = None
+      elif entry['entryType'] == "colbreak":
+        curRow = None
+        curCol = None
+
+    return gridCols
 
   def getHeader(self):
     return """
@@ -441,6 +449,8 @@ class Config():
                btnWidth=None, btnHeight=None):
     if entryType == "rowbreak":
       widgetId = None
+    elif entryType == "colbreak":
+      widgetId = None
     elif entryType == "infobar":
       widgetId = "infobar" + str(number)
     elif entryType == "button":
@@ -524,6 +534,8 @@ class Config():
       csv = entry.split(',', 5)
       if len(csv) == 1 and csv[0].strip() == "rowbreak":
         cmds.append(self.getEntry(number, entryType="rowbreak"))
+      elif len(csv) == 1 and csv[0].strip() == "colbreak":
+        cmds.append(self.getEntry(number, entryType="colbreak"))
       elif len(csv) == 2 and csv[0].strip() == "infobar":
         command = csv[1].strip()
         cmds.append(self.getEntry(number, entryType="infobar", command=command))
