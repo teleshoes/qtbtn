@@ -338,9 +338,9 @@ class QmlGenerator():
           border.width: 5
           property variant hover: false
           property variant buttonColorDefault: "gray"
+          property variant buttonColorClicked: "black"
+          property variant buttonColorHover: "light gray"
           property variant buttonColorGradient: "white"
-          property variant buttonColorClicked: Qt.lighter(buttonColorDefault)
-          property variant buttonColorHover: Qt.darker(buttonColorDefault)
 
           property variant buttonColor: buttonColorDefault
           MouseArea {
