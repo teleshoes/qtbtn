@@ -325,6 +325,9 @@ class QmlGenerator():
           property variant hover: false
           property variant buttonColorDefault: "gray"
           property variant buttonColorGradient: "white"
+          property variant buttonColorClicked: Qt.lighter(buttonColorDefault)
+          property variant buttonColorHover: Qt.darker(buttonColorDefault)
+
           property variant buttonColor: buttonColorDefault
           MouseArea {
             hoverEnabled: true
@@ -332,9 +335,9 @@ class QmlGenerator():
             onClicked: commandRunner.runCommand("%(command)s")
             function setColor(){
               if(this.pressed){
-                parent.buttonColor = Qt.lighter(parent.buttonColorDefault)
+                parent.buttonColor = parent.buttonColorClicked
               }else if(this.containsMouse){
-                parent.buttonColor = Qt.darker(parent.buttonColorDefault)
+                parent.buttonColor = parent.buttonColorHover
               }else{
                 parent.buttonColor = parent.buttonColorDefault
               }
