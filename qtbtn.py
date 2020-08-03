@@ -319,10 +319,12 @@ class QmlGenerator():
         Component{
           id: %(widgetId)s
           Text {
+            property variant column: parent.parent.parent
             property string infobarWidgetId: "%(widgetId)s"
             objectName: "infobar"
             font.pointSize: 32
-            width: 100
+            width: column.width
+            clip: true
           }
         }
     """ % entry
