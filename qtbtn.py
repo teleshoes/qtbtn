@@ -199,12 +199,14 @@ class QmlGenerator():
     qml += self.indent(1, self.getMain())
     qml += "\n"
     for entry in self.entries:
-      if entry['rowbreak']:
+      if entry['entryType'] == "rowbreak":
         qml += "\n"
-      elif entry['infobar']:
+      elif entry['entryType'] == "infobar":
         qml += self.indent(1, self.getInfobar(entry))
-      else:
+      elif entry['entryType'] == "button":
         qml += self.indent(1, self.getButton(entry))
+      else:
+        raise ValueError("unknown entryType: " + str(entryType))
       qml += "\n"
     qml += self.indent(0, self.getFooter())
     return qml
@@ -272,20 +274,22 @@ class QmlGenerator():
     rows = []
     row = []
     for entry in self.entries:
-      if entry['infobar']:
+      if entry['entryType'] == "infobar":
         if len(row) > 0:
           rows.append(row)
           row = []
         rows.append([entry])
-      elif entry['rowbreak']:
+      elif entry['entryType'] == "rowbreak":
         if len(row) > 0:
           rows.append(row)
           row = []
-      else:
+      elif entry['entryType'] == "button":
         if len(row) >= maxRowLen:
           rows.append(row)
           row = []
         row.append(entry)
+      else:
+        raise ValueError("unknown entryType: " + str(entryType))
     if len(row) > 0:
       rows.append(row)
       row = []
@@ -432,22 +436,22 @@ class MainWindow(QQuickView):
 class Config():
   def __init__(self, confFile):
     self.confFile = confFile
-  def getEntry(self, number,
+  def getEntry(self, number, entryType,
                name=None, icon=None, command=None,
-               btnWidth=None, btnHeight=None,
-               infobar=False, rowbreak=False):
-    if rowbreak:
+               btnWidth=None, btnHeight=None):
+    if entryType == "rowbreak":
       widgetId = None
-    elif infobar:
+    elif entryType == "infobar":
       widgetId = "infobar" + str(number)
-    else:
+    elif entryType == "button":
       widgetId = "button" + str(number)
+    else:
+      raise ValueError("unknown entryType: " + str(entryType))
     return { "widgetId": widgetId
            , "name": name
+           , "entryType": entryType
            , "icon": self.getIconPath(icon)
            , "command": command
-           , "infobar": infobar
-           , "rowbreak": rowbreak
            , "btnWidth": btnWidth
            , "btnHeight": btnHeight
            }
@@ -519,10 +523,10 @@ class Config():
     for entry in entries:
       csv = entry.split(',', 5)
       if len(csv) == 1 and csv[0].strip() == "rowbreak":
-        cmds.append(self.getEntry(number, rowbreak=True))
+        cmds.append(self.getEntry(number, entryType="rowbreak"))
       elif len(csv) == 2 and csv[0].strip() == "infobar":
         command = csv[1].strip()
-        cmds.append(self.getEntry(number, command=command, infobar=True))
+        cmds.append(self.getEntry(number, entryType="infobar", command=command))
         number+=1
       elif len(csv) == 5:
         name = csv[0].strip()
@@ -530,7 +534,8 @@ class Config():
         btnHeight = csv[2].strip()
         icon = csv[3].strip()
         command = csv[4].strip()
-        cmds.append(self.getEntry(number, name=name, icon=icon, command=command,
+        cmds.append(self.getEntry(number, entryType="button",
+                    name=name, icon=icon, command=command,
                     btnWidth=btnWidth, btnHeight=btnHeight))
         number+=1
       elif len(csv) == 3:
@@ -539,7 +544,8 @@ class Config():
         command = csv[2].strip()
         btnWidth = 150
         btnHeight = 180
-        cmds.append(self.getEntry(number, name=name, icon=icon, command=command,
+        cmds.append(self.getEntry(number, entryType="button",
+                    name=name, icon=icon, command=command,
                     btnWidth=btnWidth, btnHeight=btnHeight))
         number+=1
       else:
