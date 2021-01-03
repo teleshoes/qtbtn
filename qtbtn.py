@@ -27,6 +27,7 @@ import time
 DEFAULT_ICON_DIR = "/usr/share/icons"
 DEFAULT_ICON_THEME = "hicolor"
 DEFAULT_ICON_MAX_WIDTH = 256
+DEFAULT_INFOBAR_FONT_SIZE = 32
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -322,7 +323,7 @@ class QmlGenerator():
             property variant column: parent.parent.parent
             property string infobarWidgetId: "%(widgetId)s"
             objectName: "infobar"
-            font.pointSize: 32
+            font.pointSize: %(fontSize)s
             width: column.width
             clip: true
           }
@@ -448,7 +449,7 @@ class Config():
     self.confFile = confFile
   def getEntry(self, number, entryType,
                name=None, icon=None, command=None,
-               btnWidth=None, btnHeight=None):
+               btnWidth=None, btnHeight=None, fontSize=None):
     if entryType == "rowbreak":
       widgetId = None
     elif entryType == "colbreak":
@@ -466,6 +467,7 @@ class Config():
            , "command": command
            , "btnWidth": btnWidth
            , "btnHeight": btnHeight
+           , "fontSize": fontSize
            }
   def getIconPath(self, icon):
     if icon == None:
@@ -539,8 +541,16 @@ class Config():
       elif len(csv) == 1 and csv[0].strip() == "colbreak":
         cmds.append(self.getEntry(number, entryType="colbreak"))
       elif len(csv) == 2 and csv[0].strip() == "infobar":
+        fontSize = DEFAULT_INFOBAR_FONT_SIZE
         command = csv[1].strip()
-        cmds.append(self.getEntry(number, entryType="infobar", command=command))
+        cmds.append(self.getEntry(number, entryType="infobar", command=command,
+          fontSize=fontSize))
+        number+=1
+      elif len(csv) == 3 and csv[0].strip() == "infobar":
+        fontSize = csv[1].strip()
+        command = csv[2].strip()
+        cmds.append(self.getEntry(number, entryType="infobar", command=command,
+          fontSize=fontSize))
         number+=1
       elif len(csv) == 5:
         name = csv[0].strip()
