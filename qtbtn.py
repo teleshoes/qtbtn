@@ -64,6 +64,9 @@ usage = """Usage:
     --left
       align widgets on the left
 
+    --bg | --run-in-background
+      continue updating infobars when window is not active
+
     --dbus=SERVICE_SUFFIX
       instead of showing the window, listen for dbus signals controlling it
       also, do not quit app on window close
@@ -88,6 +91,7 @@ def main():
   center=True
   useDbus=False
   dbusServiceSuffix=None
+  runInBackground=False
   while len(args) > 0 and args[0].startswith("-"):
     arg = args.pop(0)
     if arg == "--landscape":
@@ -105,6 +109,8 @@ def main():
       center = True
     elif arg == "--left":
       center = False
+    elif arg == "--bg" or arg == "--run-in-background":
+      runInBackground = True
     elif RE.match("--dbus=([a-z]+)", arg):
       dbusServiceSuffix = RE.group(1)
       useDbus = True
@@ -132,7 +138,7 @@ def main():
   fh.write(qml)
   fh.close()
 
-  widget = MainWindow(qmlFile, entries)
+  widget = MainWindow(qmlFile, entries, runInBackground)
   widget.resize(width, height)
 
   if useDbus:
@@ -389,11 +395,12 @@ class QmlGenerator():
 
 
 class CommandRunner(QObject):
-  def __init__(self, mainWindow, entries, infobarWidgets):
+  def __init__(self, mainWindow, entries, infobarWidgets, runInBackground):
     QObject.__init__(self, mainWindow)
     self.mainWindow = mainWindow
     self.entries = entries
     self.infobarWidgets = infobarWidgets
+    self.runInBackground = runInBackground
 
     self.cmdsByWidgetId = {}
     for entry in entries:
@@ -403,7 +410,8 @@ class CommandRunner(QObject):
     self.infobarsTimer = QTimer(self)
     self.infobarsTimer.timeout.connect(self.updateInfobars)
     self.setInfobarsTimerEnabled(True)
-    self.mainWindow.activeChanged.connect(self.onMainWindowActiveChanged)
+    if not self.runInBackground:
+      self.mainWindow.activeChanged.connect(self.onMainWindowActiveChanged)
   @pyqtSlot(str)
   def runCommand(self, command):
     os.system(command)
@@ -416,7 +424,7 @@ class CommandRunner(QObject):
     if enabled:
       self.infobarsTimer.start(self.infobarsTimerIntervalMillis)
   def updateInfobars(self):
-    if not self.mainWindow.isActive():
+    if not self.runInBackground and not self.mainWindow.isActive():
       return
 
     for infobarWidget in self.infobarWidgets:
@@ -435,12 +443,12 @@ class CommandRunner(QObject):
       infobarWidget.setProperty("text", msg)
 
 class MainWindow(QQuickView):
-  def __init__(self, qmlFile, entries):
+  def __init__(self, qmlFile, entries, runInBackground):
     super(MainWindow, self).__init__(None)
     self.setSource(QUrl(qmlFile))
 
     infobarWidgets = self.rootObject().findChildren(QObject, "infobar")
-    self.commandRunner = CommandRunner(self, entries, infobarWidgets)
+    self.commandRunner = CommandRunner(self, entries, infobarWidgets, runInBackground)
     self.commandRunner.updateInfobars()
     self.rootContext().setContextProperty("commandRunner", self.commandRunner)
 
