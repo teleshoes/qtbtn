@@ -59,6 +59,10 @@ usage = """Usage:
       NOTE:
         this affects --landscape/--portrait determination
 
+    --scale=SCALING_FACTOR
+      set 'scale' property on main QML Item to SCALING_FACTOR,
+        a real number with 1.0 for unscaled
+
     --center
       align widgets in the center (this is the default)
     --left
@@ -105,6 +109,8 @@ def main():
     elif RE.match("^--size=(\d+)x(\d+)$", arg):
       width = int(RE.group(1))
       height = int(RE.group(2))
+    elif RE.match("^--scale=(\d+|\d*\.\d+)$", arg):
+      scale = float(RE.group(1))
     elif arg == "--center":
       center = True
     elif arg == "--left":
@@ -132,7 +138,7 @@ def main():
 
   entries = Config(configFile).readConfFile()
 
-  qml = QmlGenerator(width, height, orientation, center, entries).getQml()
+  qml = QmlGenerator(width, height, scale, orientation, center, entries).getQml()
   fd, qmlFile = tempfile.mkstemp(prefix="qtbtn_", suffix=".qml")
   fh = open(qmlFile, 'w')
   fh.write(qml)
@@ -191,10 +197,11 @@ def qtBtnDbusFactory(dbusService):
   return QtBtnDbus()
 
 class QmlGenerator():
-  def __init__(self, width, height, orientation, center, entries):
+  def __init__(self, width, height, scale, orientation, center, entries):
     self.entries = entries
     self.width = width
     self.height = height
+    self.scale = scale
     self.orientation = orientation
     self.center = center
     self.landscapeMaxRowLen = 7
@@ -315,7 +322,8 @@ class QmlGenerator():
       import QtQuick 2.3
 
       Rectangle {
-    """
+        scale: %(scale)f;
+   """ % {"scale": self.scale}
   def getFooter(self):
     return """
       }
@@ -329,6 +337,7 @@ class QmlGenerator():
             property variant column: parent.parent.parent
             property string infobarWidgetId: "%(widgetId)s"
             objectName: "infobar"
+            textFormat: Text.RichText
             font.pointSize: %(fontSize)s
             width: column.width
             clip: true
