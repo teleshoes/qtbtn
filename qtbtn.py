@@ -102,7 +102,7 @@ def main():
       fullscreen=True
     elif arg == "--window" or arg == "-w":
       fullscreen=False
-    elif RE.match("--size=(\d+)x(\d+)", arg):
+    elif RE.match("^--size=(\d+)x(\d+)$", arg):
       width = int(RE.group(1))
       height = int(RE.group(2))
     elif arg == "--center":
