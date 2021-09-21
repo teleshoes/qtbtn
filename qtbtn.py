@@ -450,6 +450,7 @@ class CommandRunner(QObject):
         proc.terminate()
       except:
         msg = "ERROR"
+      msg = msg.replace('\n', '<br/>')
       infobarWidget.setProperty("text", msg)
 
 class MainWindow(QQuickView):
