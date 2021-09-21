@@ -96,6 +96,7 @@ def main():
   useDbus=False
   dbusServiceSuffix=None
   runInBackground=False
+  scale = 1.0
   while len(args) > 0 and args[0].startswith("-"):
     arg = args.pop(0)
     if arg == "--landscape":
