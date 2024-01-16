@@ -59,6 +59,9 @@ usage = """Usage:
       NOTE:
         this affects --landscape/--portrait determination
 
+    --title=WINDOW_TITLE
+      set the window title
+
     --scale=SCALING_FACTOR
       set 'scale' property on main QML Item to SCALING_FACTOR,
         a real number with 1.0 for unscaled
@@ -96,6 +99,7 @@ def main():
   useDbus=False
   dbusServiceSuffix=None
   runInBackground=False
+  windowTitle=None
   scale = 1.0
   while len(args) > 0 and args[0].startswith("-"):
     arg = args.pop(0)
@@ -110,6 +114,8 @@ def main():
     elif RE.match("^--size=(\d+)x(\d+)$", arg):
       width = int(RE.group(1))
       height = int(RE.group(2))
+    elif RE.match("^--title=(.+)$", arg):
+      windowTitle = RE.group(1)
     elif RE.match("^--scale=(\d+|\d*\.\d+)$", arg):
       scale = float(RE.group(1))
     elif arg == "--center":
@@ -147,6 +153,8 @@ def main():
 
   widget = MainWindow(qmlFile, entries, runInBackground)
   widget.resize(width, height)
+  if windowTitle != None:
+    widget.setTitle(windowTitle)
 
   if useDbus:
     app.setQuitOnLastWindowClosed(False)
