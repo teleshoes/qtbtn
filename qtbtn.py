@@ -118,7 +118,7 @@ def main():
       center = False
     elif arg == "--bg" or arg == "--run-in-background":
       runInBackground = True
-    elif RE.match("--dbus=([a-z]+)", arg):
+    elif RE.match("^--dbus=([a-z]+)$", arg):
       dbusServiceSuffix = RE.group(1)
       useDbus = True
     else:
