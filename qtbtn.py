@@ -29,6 +29,8 @@ DEFAULT_ICON_THEME = "hicolor"
 DEFAULT_ICON_MAX_WIDTH = 256
 DEFAULT_INFOBAR_FONT_SIZE = 32
 
+INFOBAR_INTERVAL_MILLIS = 1000
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 DBUS_SERVICE_PREFIX = "org.teleshoes.qtbtn"
@@ -424,7 +426,7 @@ class CommandRunner(QObject):
     for entry in entries:
       self.cmdsByWidgetId[entry["widgetId"]] = entry["command"]
 
-    self.infobarsTimerIntervalMillis = 1000
+    self.infobarsTimerIntervalMillis = INFOBAR_INTERVAL_MILLIS
     self.infobarsTimer = QTimer(self)
     self.infobarsTimer.timeout.connect(self.updateInfobars)
     self.setInfobarsTimerEnabled(True)
