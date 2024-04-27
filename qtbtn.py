@@ -29,7 +29,7 @@ DEFAULT_ICON_THEME = "hicolor"
 DEFAULT_ICON_MAX_WIDTH = 256
 DEFAULT_INFOBAR_FONT_SIZE = 32
 
-INFOBAR_INTERVAL_MILLIS = 1000
+DEFAULT_INFOBAR_INTERVAL_MILLIS = 1000
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -100,6 +100,7 @@ def main():
   center=True
   useDbus=False
   dbusServiceSuffix=None
+  infobarIntervalMillis=DEFAULT_INFOBAR_INTERVAL_MILLIS
   runInBackground=False
   windowTitle=None
   scale = 1.0
@@ -153,7 +154,7 @@ def main():
   fh.write(qml)
   fh.close()
 
-  widget = MainWindow(qmlFile, entries, runInBackground)
+  widget = MainWindow(qmlFile, entries, infobarIntervalMillis, runInBackground)
   widget.resize(width, height)
   if windowTitle != None:
     widget.setTitle(windowTitle)
@@ -415,7 +416,7 @@ class QmlGenerator():
 
 
 class CommandRunner(QObject):
-  def __init__(self, mainWindow, entries, infobarWidgets, runInBackground):
+  def __init__(self, mainWindow, entries, infobarWidgets, infobarIntervalMillis, runInBackground):
     QObject.__init__(self, mainWindow)
     self.mainWindow = mainWindow
     self.entries = entries
@@ -426,7 +427,7 @@ class CommandRunner(QObject):
     for entry in entries:
       self.cmdsByWidgetId[entry["widgetId"]] = entry["command"]
 
-    self.infobarsTimerIntervalMillis = INFOBAR_INTERVAL_MILLIS
+    self.infobarsTimerIntervalMillis = infobarIntervalMillis
     self.infobarsTimer = QTimer(self)
     self.infobarsTimer.timeout.connect(self.updateInfobars)
     self.setInfobarsTimerEnabled(True)
@@ -464,12 +465,13 @@ class CommandRunner(QObject):
       infobarWidget.setProperty("text", msg)
 
 class MainWindow(QQuickView):
-  def __init__(self, qmlFile, entries, runInBackground):
+  def __init__(self, qmlFile, entries, infobarIntervalMillis, runInBackground):
     super(MainWindow, self).__init__(None)
     self.setSource(QUrl(qmlFile))
 
     infobarWidgets = self.rootObject().findChildren(QObject, "infobar")
-    self.commandRunner = CommandRunner(self, entries, infobarWidgets, runInBackground)
+    self.commandRunner = CommandRunner(
+      self, entries, infobarWidgets, infobarIntervalMillis, runInBackground)
     self.commandRunner.updateInfobars()
     self.rootContext().setContextProperty("commandRunner", self.commandRunner)
 
