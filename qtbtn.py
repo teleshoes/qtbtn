@@ -73,6 +73,10 @@ usage = """Usage:
     --left
       align widgets on the left
 
+    --infobar-interval-millis=INFOBAR_INTERVAL_MILLIS
+      update infobar widgets every INFOBAR_INTERVAL_MILLIS
+      (default is %(defaultInfobarIntervalMillis)s ms)
+
     --bg | --run-in-background
       continue updating infobars when window is not active
 
@@ -87,7 +91,8 @@ usage = """Usage:
         show(): show the window
         hide(): hide the window
         quit(): quit the application
-""" % {"exec": sys.argv[0], "dbusServicePrefix": DBUS_SERVICE_PREFIX}
+""" % {"exec": sys.argv[0], "dbusServicePrefix": DBUS_SERVICE_PREFIX,
+       "defaultInfobarIntervalMillis": DEFAULT_INFOBAR_INTERVAL_MILLIS}
 
 def main():
   args = sys.argv
@@ -125,6 +130,8 @@ def main():
       center = True
     elif arg == "--left":
       center = False
+    elif RE.match("^--infobar-interval-millis=(\d+)$", arg):
+      infobarIntervalMillis = int(RE.group(1))
     elif arg == "--bg" or arg == "--run-in-background":
       runInBackground = True
     elif RE.match("^--dbus=([a-z]+)$", arg):
